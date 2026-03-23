@@ -1489,6 +1489,7 @@ static void ieee80211_iface_work(struct work_struct *work)
 	case NL80211_IFTYPE_STATION:
 		printk("IFACE WORK RDK\n");
 		ieee80211_sta_work(sdata);
+		printk("Coming after ieee80211_sta_work\n");
 		break;
 	case NL80211_IFTYPE_ADHOC:
 		ieee80211_ibss_work(sdata);

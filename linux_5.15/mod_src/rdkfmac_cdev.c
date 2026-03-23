@@ -695,6 +695,7 @@ static void handle_frame(wlan_emu_msg_data_t *spec, ssize_t *len, u8 *s_tmp)
 	memcpy(s_tmp, spec->u.frm80211.u.frame.client_macaddr, ETH_ALEN);
 	*len += ETH_ALEN;
 
+	printk("Returning from handle_frame\n");
 	return;
 }
 
@@ -724,6 +725,7 @@ static void handle_frm80211_msg(wlan_emu_msg_data_t *spec, ssize_t *len, u8 *s_t
 			break;
 	}
 
+	printk("Returning from handle_frm80211_msg\n");
 	return;
 }
 
@@ -768,13 +770,16 @@ static ssize_t rdkfmac_read(struct file *file, char __user *user_buffer,
 		return -EFAULT;
 	}
 
+	printk("Coming here before freeing the frame\n");
 	if (spec->type == wlan_emu_msg_type_frm80211) {
 		kfree(spec->u.frm80211.u.frame.frame);
 	}
-
+	printk("Coming after freeing the frame\n");
 
 	kfree(spec);
+	printk("Coming after freeing spec\n");
 	kfree(send_buff);
+	printk("Coming after freeing send_buff\n");
 
 	return return_len;
 }
