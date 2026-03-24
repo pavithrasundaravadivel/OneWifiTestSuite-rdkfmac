@@ -1400,6 +1400,9 @@ static int ieee80211_build_preq_ies_band(struct ieee80211_sub_if_data *sdata,
 	u32 rate_flags;
 	bool have_80mhz = false;
 	struct mac80211_rdkfmac_data *rdkfmac_data = local->hw.priv;
+	struct ieee80211_supported_band *sband6;
+	enum nl80211_iftype iftype;
+	__le16 cap;
 
 	*offset = 0;
 
@@ -1594,7 +1597,6 @@ static int ieee80211_build_preq_ies_band(struct ieee80211_sub_if_data *sdata,
 					 BIT(NL80211_BAND_6GHZ),
 					 IEEE80211_CHAN_NO_HE)) {
 		printk("Coming inside cfg80211_any_usable_channels\n");
-		struct ieee80211_supported_band *sband6;
 
 		sband6 = local->hw.wiphy->bands[NL80211_BAND_6GHZ];
 		printk("Coming after sband6\n");
@@ -1603,10 +1605,9 @@ static int ieee80211_build_preq_ies_band(struct ieee80211_sub_if_data *sdata,
 		printk("Coming after he_iftype_cap\n");
 		if (he_cap) {
 			printk("Coming inside he_cap\n");
-			enum nl80211_iftype iftype =
-				ieee80211_vif_type_p2p(&sdata->vif);
+			iftype = ieee80211_vif_type_p2p(&sdata->vif);
 			printk("Coming after if_type\n");
-			__le16 cap = ieee80211_get_he_6ghz_capa(sband, iftype);
+			cap = ieee80211_get_he_6ghz_capa(sband, iftype);
 			printk("Coming after ieee_get_he_6g\n");
 			pos = ieee80211_write_he_6ghz_cap(pos, cap, end);
 			printk("Coming after pos\n");
