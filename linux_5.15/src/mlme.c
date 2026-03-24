@@ -2552,11 +2552,15 @@ static void ieee80211_mlme_send_probe_req(struct ieee80211_sub_if_data *sdata,
 {
 	struct sk_buff *skb;
 
+	printk("Before calling ieee80211_build_probe_req\n");
 	skb = ieee80211_build_probe_req(sdata, src, dst, (u32)-1, channel,
 					ssid, ssid_len, NULL, 0,
 					IEEE80211_PROBE_FLAG_DIRECTED);
+	printk("After calling ieee80211_build_probe_req\n");
 	if (skb)
 		ieee80211_tx_skb(sdata, skb);
+
+	printk("End of ieee80211_mlme_send_probe_req\n");
 }
 
 static void ieee80211_mgd_probe_ap_send(struct ieee80211_sub_if_data *sdata)

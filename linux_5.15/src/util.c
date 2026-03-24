@@ -1582,39 +1582,50 @@ static int ieee80211_build_preq_ies_band(struct ieee80211_sub_if_data *sdata,
 	    cfg80211_any_usable_channels(local->hw.wiphy, BIT(sband->band),
 					 IEEE80211_CHAN_NO_HE |
 					 IEEE80211_CHAN_NO_EHT)) && (rdkfmac_data->op_modes & MODE_EHT)) {
+		printk("Coming inside cfg80211_any_usable_channels\n");
 		pos = ieee80211_ie_build_eht_cap(pos, he_cap, eht_cap, end,
 				sdata->vif.type == NL80211_IFTYPE_AP);
+		printk("Coming after ieee80211_ie_build_eht_cap\n");
 		if (!pos)
 			goto out_err;
 	}
-
+	printk("Coming after cfg80211_any_usable_channels\n");
 	if (cfg80211_any_usable_channels(local->hw.wiphy,
 					 BIT(NL80211_BAND_6GHZ),
 					 IEEE80211_CHAN_NO_HE)) {
+		printk("Coming inside cfg80211_any_usable_channels\n");
 		struct ieee80211_supported_band *sband6;
 
 		sband6 = local->hw.wiphy->bands[NL80211_BAND_6GHZ];
+		printk("Coming after sband6\n");
 		he_cap = ieee80211_get_he_iftype_cap(sband6,
 				ieee80211_vif_type_p2p(&sdata->vif));
-
+		printk("Coming after he_iftype_cap\n");
 		if (he_cap) {
+			printk("Coming inside he_cap\n");
 			enum nl80211_iftype iftype =
 				ieee80211_vif_type_p2p(&sdata->vif);
+			printk("Coming after if_type\n");
 			__le16 cap = ieee80211_get_he_6ghz_capa(sband, iftype);
-
+			printk("Coming after ieee_get_he_6g\n");
 			pos = ieee80211_write_he_6ghz_cap(pos, cap, end);
+			printk("Coming after pos\n");
 		}
+		printk("Coming after he_cap\n");
 	}
+	printk("Coming after any usable channel\n");
 
 	/*
 	 * If adding more here, adjust code in main.c
 	 * that calculates local->scan_ies_len.
 	 */
-
+	printk("REturning the pos-buffer\n");
 	return pos - buffer;
  out_err:
+	printk(" No enough space for preq IEs\n");
 	WARN_ONCE(1, "not enough space for preq IEs\n");
  done:
+	printk("Returning the pos-buffer in done\n");
 	return pos - buffer;
 }
 
@@ -1641,24 +1652,34 @@ int ieee80211_build_preq_ies(struct ieee80211_sub_if_data *sdata, u8 *buffer,
 							     chandef,
 							     &custom_ie_offset,
 							     flags);
+			printk("Coming after ieee80211_build_preq_ies_band\n");
 			ie_desc->ies[i] = buffer + old_pos;
+			printk("Coming after ies[i]\n");
 			ie_desc->len[i] = pos - old_pos;
+			printk("Coming after len[i]\n");
 			old_pos = pos;
+			printk("Coming old_pos\n");
 		}
+		printk("Coming here1\n");
 	}
-
+	printk("Coming after for loop\n");
 	/* add any remaining custom IEs */
 	if (ie && ie_len) {
+		printk("Coming inside ie && ie_len\n");
 		if (WARN_ONCE(buffer_len - pos < ie_len - custom_ie_offset,
 			      "not enough space for preq custom IEs\n"))
 			return pos;
 		memcpy(buffer + pos, ie + custom_ie_offset,
 		       ie_len - custom_ie_offset);
+		printk("Coming after memcpy\n");
 		ie_desc->common_ies = buffer + pos;
+		printk("Coming common_ies\n");
 		ie_desc->common_ie_len = ie_len - custom_ie_offset;
+		printk("Coming common_ie_len\n");
 		pos += ie_len - custom_ie_offset;
+		printk("Coming after pos+\n");
 	}
-
+	printk("Return pos\n");
 	return pos;
 };
 
@@ -1695,20 +1716,27 @@ struct sk_buff *ieee80211_build_probe_req(struct ieee80211_sub_if_data *sdata,
 		return NULL;
 
 	rate_masks[chan->band] = ratemask;
+	printk("BEfore calling ieee80211_build_preq_ies\n");
 	ies_len = ieee80211_build_preq_ies(sdata, skb_tail_pointer(skb),
 					   skb_tailroom(skb), &dummy_ie_desc,
 					   ie, ie_len, BIT(chan->band),
 					   rate_masks, &chandef, flags);
+	printk("After ieee80211_build_preq_ies\n");
 	skb_put(skb, ies_len);
 
 	if (dst) {
+		printk("After dst\n");
 		mgmt = (struct ieee80211_mgmt *) skb->data;
+		printk("After mgmt\n");
 		memcpy(mgmt->da, dst, ETH_ALEN);
+		printk("After memcpy da\n");
 		memcpy(mgmt->bssid, dst, ETH_ALEN);
+		printk("After memcpy bssid\n");
 	}
 
 	IEEE80211_SKB_CB(skb)->flags |= IEEE80211_TX_INTFL_DONT_ENCRYPT;
 
+	printk("return skb\n");
 	return skb;
 }
 
