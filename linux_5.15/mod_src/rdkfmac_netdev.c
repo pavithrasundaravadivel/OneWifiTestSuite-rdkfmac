@@ -1752,6 +1752,10 @@ static void mac80211_hwsim_tx(struct ieee80211_hw *hw,
 	u32 _portid, i;
 	u16 rflags;
 	enum nl80211_chan_width bw;
+	struct ieee80211_mgmt *mgmt;
+        struct ieee80211_rate *txrate;
+	int bitrate;
+	u64 ts;
 
 	struct ethhdr *eth_hdr;
 	eth_hdr = (void *)skb->data;
@@ -1858,11 +1862,8 @@ static void mac80211_hwsim_tx(struct ieee80211_hw *hw,
 		ieee80211_is_probe_resp(hdr->frame_control)) {
 		printk("Coming inside fake header transmission time\n");
 		/* fake header transmission time */
-		struct ieee80211_mgmt *mgmt;
-		struct ieee80211_rate *txrate;
 		/* TODO: get MCS */
-		int bitrate = 100;
-		u64 ts;
+		bitrate = 100;
 
 		mgmt = (struct ieee80211_mgmt *)skb->data;
 		txrate = ieee80211_get_tx_rate(hw, txi);
