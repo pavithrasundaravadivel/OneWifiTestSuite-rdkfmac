@@ -1750,7 +1750,8 @@ static void mac80211_hwsim_tx(struct ieee80211_hw *hw,
 	bool ack;
 	enum nl80211_chan_width confbw = NL80211_CHAN_WIDTH_20_NOHT;
 	u32 _portid, i;
-
+	u16 rflags;
+	enum nl80211_chan_width bw;
 
 	struct ethhdr *eth_hdr;
 	eth_hdr = (void *)skb->data;
@@ -1771,35 +1772,51 @@ static void mac80211_hwsim_tx(struct ieee80211_hw *hw,
 
 	}
 
+	printk("Coming after RDKFMAC SEND\n");
 	if (WARN_ON(skb->len < 10)) {
+		printk("Coming inside skb len\n");
 		/* Should not happen; just a sanity check for addr1 use */
 		ieee80211_free_txskb(hw, skb);
+		printk("Returning here in skb len\n");
 		return;
 	}
 
 	if (!data->use_chanctx) {
+		printk("Coming after use chanctx\n");
 		channel = data->channel;
 		confbw = data->bw;
 	} else if (txi->hw_queue == 4) {
+		printk("Coming inside hw_queue\n");
 		channel = data->tmp_chan;
 	} else {
+		printk("Coming inside else of chanctx\n");
 		chanctx_conf = rcu_dereference(txi->control.vif->chanctx_conf);
+		printk("Coming after rcu ref\n");
 		if (chanctx_conf) {
+			printk("Coming inside chanctx_conf\n");
 			channel = chanctx_conf->def.chan;
+			printk("Coming after channel\n");
 			confbw = chanctx_conf->def.width;
+			printk("Coming after confbw\n");
 		} else {
+			printk("Coming inside else of channel is NULL\n");
 			channel = NULL;
 		}
 	} 
-
+	printk("Coming before TX w/o channel\n");
 	if (WARN(!channel, "TX w/o channel - queue = %d\n", txi->hw_queue)) {
+		printk("Coming before freeing txskb\n");
 		ieee80211_free_txskb(hw, skb);
+		printk("returning after freeing txskb\n");
 		return;
 	}
 
+	printk("Coming before idle\n");
 	if (data->idle && !data->tmp_chan) {
+		printk("Coming inside data->idle\n");
 		wiphy_dbg(hw->wiphy, "Trying to TX when idle - reject\n");
 		ieee80211_free_txskb(hw, skb);
+		printk("Coming after freeing txskb2\n");
 		return;
 	}
 
@@ -1808,32 +1825,38 @@ static void mac80211_hwsim_tx(struct ieee80211_hw *hw,
 	if (control->sta)
 		hwsim_check_sta_magic(control->sta);
 
+	printk("Coming after checking the sta_magic\n");
+
 	if (ieee80211_hw_check(hw, SUPPORTS_RC_TABLE))
 		ieee80211_get_tx_rates(txi->control.vif, control->sta, skb,
 						txi->control.rates,
 						ARRAY_SIZE(txi->control.rates));
-
+	printk("Coming after checking the hw\n");
 	for (i = 0; i < ARRAY_SIZE(txi->control.rates); i++) {
-		u16 rflags = txi->control.rates[i].flags;
+		printk("Coming inside loop\n");
+		rflags = txi->control.rates[i].flags;
 		/* initialize to data->bw for 5/10 MHz handling */
-		enum nl80211_chan_width bw = data->bw;
-
+		bw = data->bw;
+		printk("Coming after bw\n");
 		if (txi->control.rates[i].idx == -1)
 			break;
-
+		printk("Coming after control.rates\n");
 		if (rflags & IEEE80211_TX_RC_40_MHZ_WIDTH)
 			bw = NL80211_CHAN_WIDTH_40;
 		else if (rflags & IEEE80211_TX_RC_80_MHZ_WIDTH)
 			bw = NL80211_CHAN_WIDTH_80;
 		else if (rflags & IEEE80211_TX_RC_160_MHZ_WIDTH)
 			bw = NL80211_CHAN_WIDTH_160;
-
+		
+		printk("Coming after else if\n");
 		if (WARN_ON(hwsim_get_chanwidth(bw) > hwsim_get_chanwidth(confbw)))
 			return;
+		printk("Coming after get_chanwidth\n");
 	}
 
 	if (skb->len >= 24 + 8 &&
 		ieee80211_is_probe_resp(hdr->frame_control)) {
+		printk("Coming inside fake header transmission time\n");
 		/* fake header transmission time */
 		struct ieee80211_mgmt *mgmt;
 		struct ieee80211_rate *txrate;
@@ -1851,31 +1874,43 @@ static void mac80211_hwsim_tx(struct ieee80211_hw *hw,
 					24 * 8 * 10 / bitrate);
 	}
 
+	printk("Coming before mac80211_hwsim_monitor_rx\n");
 	mac80211_hwsim_monitor_rx(hw, skb, channel);
 
+	printk("Coming before portid\n");
 	/* wmediumd mode check */
 	_portid = READ_ONCE(data->wmediumd);
 
+	printk("Coming before check portid\n");
 	if (_portid)
 		return mac80211_hwsim_tx_frame_nl(hw, skb, _portid, channel);
 
+	printk("Coming before NO wmediumd\n");
 	/* NO wmediumd detected, perfect medium simulation */
 	data->tx_pkts++;
 	data->tx_bytes += skb->len;
+	printk("Coming before mac80211_hwsim_tx_frame_no_nl\n");
 	ack = mac80211_hwsim_tx_frame_no_nl(hw, skb, channel);
+	printk("Coming after mac80211_hwsim_tx_frame_no_nl\n");
 
 	if (ack && skb->len >= 16)
 		mac80211_hwsim_monitor_ack(channel, hdr->addr2);
 
+	printk("Coming before ieee80211_tx_info_clear_status\n");
 	ieee80211_tx_info_clear_status(txi);
 
+	printk("Coming before frame was transmitted\n");
 	/* frame was transmitted at most favorable rate at first attempt */
 	txi->control.rates[0].count = 1;
 	txi->control.rates[1].idx = -1;
 
+	printk("Coming before txi flag check\n");
 	if (!(txi->flags & IEEE80211_TX_CTL_NO_ACK) && ack)
 		txi->flags |= IEEE80211_TX_STAT_ACK;
+	printk("Coming before ieee80211_tx_status_irqsafe\n");
 	ieee80211_tx_status_irqsafe(hw, skb);
+
+	printk("Coming after ieee80211_tx_status_irqsafe\n");
 }
 
 static int mac80211_hwsim_start(struct ieee80211_hw *hw)
