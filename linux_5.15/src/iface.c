@@ -988,6 +988,8 @@ int ieee80211_add_virtual_monitor(struct ieee80211_local *local)
 	skb_queue_head_init(&sdata->status_queue);
 	INIT_WORK(&sdata->work, ieee80211_iface_work);
 
+	printk("Returning after iface_work\n");
+
 	return 0;
 }
 
@@ -1551,11 +1553,17 @@ static void ieee80211_setup_sdata(struct ieee80211_sub_if_data *sdata,
 	skb_queue_head_init(&sdata->skb_queue);
 	skb_queue_head_init(&sdata->status_queue);
 	INIT_WORK(&sdata->work, ieee80211_iface_work);
+	printk("coming after iface_work\n");
 	INIT_WORK(&sdata->recalc_smps, ieee80211_recalc_smps_work);
+	printk("coming after recalc smps\n");
 	INIT_WORK(&sdata->csa_finalize_work, ieee80211_csa_finalize_work);
+	printk("coming after csa_finalize\n");
 	INIT_WORK(&sdata->color_change_finalize_work, ieee80211_color_change_finalize_work);
+	printk("coming after color change\n");
 	INIT_LIST_HEAD(&sdata->assigned_chanctx_list);
+	printk("coming after assigned chanctx\n");
 	INIT_LIST_HEAD(&sdata->reserved_chanctx_list);
+	printk("coming after reserved chanctx\n");
 
 	switch (type) {
 	case NL80211_IFTYPE_P2P_GO:
@@ -1574,6 +1582,7 @@ static void ieee80211_setup_sdata(struct ieee80211_sub_if_data *sdata,
 		sdata->vif.p2p = true;
 		fallthrough;
 	case NL80211_IFTYPE_STATION:
+		printk("coming inside station\n");
 		sdata->vif.bss_conf.bssid = sdata->u.mgd.bssid;
 		ieee80211_sta_setup_sdata(sdata);
 		break;
@@ -1610,8 +1619,9 @@ static void ieee80211_setup_sdata(struct ieee80211_sub_if_data *sdata,
 		WARN_ON(1);
 		break;
 	}
-
+	printk("coming after switch\n");
 	ieee80211_debugfs_add_netdev(sdata);
+	printk("coming after add_netdev\n");
 }
 
 static int ieee80211_runtime_change_iftype(struct ieee80211_sub_if_data *sdata,
@@ -1692,14 +1702,21 @@ static int ieee80211_runtime_change_iftype(struct ieee80211_sub_if_data *sdata,
 	 */
 	ieee80211_check_queues(sdata, type);
 
+	printk("calling setup_sdata from here %d\n", __LINE__);
 	ieee80211_setup_sdata(sdata, type);
+	printk("coming after sdata_call\n");
 	ieee80211_set_vif_encap_ops(sdata);
+	printk("coming after encap ops\n");
 
 	err = ieee80211_do_open(&sdata->wdev, false);
+	printk("coming after do_open\n");
 	WARN(err, "type change: do_open returned %d", err);
 
+	printk("coming after type change\n");
 	ieee80211_wake_vif_queues(local, sdata,
 				  IEEE80211_QUEUE_STOP_REASON_IFTYPE_CHANGE);
+
+	printk("coming before return\n");
 	return ret;
 }
 
@@ -1720,13 +1737,16 @@ int ieee80211_if_change_type(struct ieee80211_sub_if_data *sdata,
 	} else {
 		/* Purge and reset type-dependent state. */
 		ieee80211_teardown_sdata(sdata);
+		printk("calling sdata_setup from here %d\n",__LINE__);
 		ieee80211_setup_sdata(sdata, type);
+		printk("coming after setup_sdata\n");
 	}
 
 	/* reset some values that shouldn't be kept across type changes */
 	if (type == NL80211_IFTYPE_STATION)
 		sdata->u.mgd.use_4addr = false;
 
+	printk("coming before return\n");
 	return 0;
 }
 
@@ -2011,9 +2031,12 @@ int ieee80211_if_add(struct ieee80211_local *local, const char *name,
 	sdata->encrypt_headroom = IEEE80211_ENCRYPT_HEADROOM;
 
 	/* setup type-dependent data */
+	printk("calling setup sdata from here\n");
 	ieee80211_setup_sdata(sdata, type);
+	printk("coming after setup_sdata\n");
 
 	if (ndev) {
+		printk("coming after ndev is not null\n");
 		ndev->ieee80211_ptr->use_4addr = params->use_4addr;
 		if (type == NL80211_IFTYPE_STATION)
 			sdata->u.mgd.use_4addr = params->use_4addr;
@@ -2038,6 +2061,7 @@ int ieee80211_if_add(struct ieee80211_local *local, const char *name,
 		ret = cfg80211_register_netdevice(ndev);
 		if (ret) {
 			free_netdev(ndev);
+			printk("coming before returing after free netdev\n");
 			return ret;
 		}
 	}
@@ -2049,6 +2073,7 @@ int ieee80211_if_add(struct ieee80211_local *local, const char *name,
 	if (new_wdev)
 		*new_wdev = &sdata->wdev;
 
+	printk("coming before return\n");
 	return 0;
 }
 
